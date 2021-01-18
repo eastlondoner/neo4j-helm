@@ -222,13 +222,17 @@ jobs:
 
              kubectl --namespace $NAMESPACE exec $NAME_CLUSTERED-neo4j-replica-0 -- /bin/cat /data/logs/debug.log > $BUILD_ARTIFACTS/replica-0-debug.log
 
+      - run:
+          name: Settle
+          command: |
+            sleep 120
+
       - run: 
           name: Verify that GCP backup succeeded
           command: |
             # If "latest" backup pointer files exist in a dir that is specific to this
             # build number, we should be good.
             NAMESPACE=ns-$CIRCLE_BUILD_NUM
-            sleep 65
             kubectl get all -n $NAMESPACE
             export LOGFILE=$BUILD_ARTIFACTS/gcp-backup.log
             kubectl get job --namespace $NAMESPACE | tee -a $LOGFILE
@@ -283,7 +287,7 @@ jobs:
 
               echo "MATCH (n) RETURN count(n) as n;" | kubectl run -i --rm cypher-shell \
                 --namespace $NAMESPACE \
-                --image=neo4j:4.2.0-enterprise --restart=Never \
+                --image=neo4j:4.2.2-enterprise --restart=Never \
                 --command -- ./bin/cypher-shell -u neo4j -p "$NEO4J_PASSWORD" \
                 -a neo4j://$NAME_RESTORE-neo4j.$NAMESPACE.svc.cluster.local 2>&1 | tee restore-result.log
               cp restore-result.log $BUILD_ARTIFACTS/
